@@ -1,0 +1,70 @@
+ip link
+ip -c addr
+ip  link set dev <> up
+ip address add <> dev <>
+
+ip address delete <> dev <>
+
+netplan get
+netplan apply
+netplan try
+
+
+cp /usr/share/doc/netplan/examples/bridge.yaml /etc/netplan/99-bridge.yaml  
+
+cat /etc/netplan/50-cloud-init.yaml
+
+# This file is generated from information provided by the datasource.  Changes
+# to it will not persist across an instance reboot.  To disable cloud-init's
+# network configuration capabilities, write a file
+# /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg with the following:
+# network: {config: disabled}
+network:
+    ethernets:
+        eth0:
+            dhcp4: true
+            dhcp6: false
+            match:
+                macaddress: 06:4e:25:44:e0:af
+    version: 2
+
+vi /etc/netplan/99-mysettings.yaml
+
+network:
+    ethernets:
+        eth1:
+            dhcp4: false
+            dhcp6: false
+            match:
+                macaddress: 06:4e:25:44:ee:aa
+            addresses:
+              - 172.1.1.1/20
+              - fe80::44e:25ff:fe44:abcd/64
+            nameservers:
+              - addresses:
+                - 8.8.4.4
+                - 8.8.8.8
+            routes:
+               - to: 19
+                 via: 10.0.0.100
+               - to: default
+                 via: 10.0.0.1                
+    version: 2
+
+iptables
+
+ufwa status numbered
+
+ufw allow in on <> from  <> to <> port <> proto <>
+ufw allow out on <> from  <> to <> port <> proto <>
+
+  10.0.0.1 192.168.0.1 
+
+apt install iptables-persistent
+
+iptables -t nat -A PREROUTING -i enp1s0 -s 10.0.0.0/24 -p tcp  --dport 8080 -j DNAT --to-destination 192.168.0.5:80
+
+iptable -t nat -A POSTROUTING -s 10.0.0.0/24 -o enp6s0 -j MASQUERADE 
+
+netfilter-persistent save
+
