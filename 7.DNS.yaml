@@ -1,0 +1,26 @@
+# DNS Server Setup Ubuntu
+
+apt update && apt install -y bind9 bind9utils bind9-doc dnsutils
+
+cd /etc/bind
+ls -l 
+
+-rw-r--r-- 1 root root 2403 Sep 21 02:15 bind.keys
+-rw-r--r-- 1 root root  237 Sep 21 02:15 db.0
+-rw-r--r-- 1 root root  271 Apr 12  2023 db.127
+-rw-r--r-- 1 root root  237 Apr 12  2023 db.255
+-rw-r--r-- 1 root root  353 Apr 12  2023 db.empty
+-rw-r--r-- 1 root root  270 Apr 12  2023 db.local
+-rw-r--r-- 1 root bind  463 Sep 21 02:15 named.conf
+-rw-r--r-- 1 root bind  498 Apr 12  2023 named.conf.default-zones
+-rw-r--r-- 1 root bind  165 Apr 12  2023 named.conf.local
+-rw-r--r-- 1 root bind  846 Apr 12  2023 named.conf.options
+-rw-r----- 1 bind bind  100 Jan  6 19:46 rndc.key
+-rw-r--r-- 1 root root 1317 Apr 12  2023 zones.rfc1918
+
+# DNS Server Setup Red Hat
+
+dnf install bind bind-utils
+
+cp --preserve=ownership /var/named/named.localhost /var/named/aywacleaners.com.zone
+
