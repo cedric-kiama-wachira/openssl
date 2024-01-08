@@ -1,0 +1,91 @@
+dnf install httpd
+systemctl enable httpd
+systemctl start httpd
+
+firewall-cmd --add-service=http --permanent
+firewall-cmd --add-service=https --permanent
+
+mkdir -p /var/www/first/public_html
+mkdir -p /var/www/second/public_html
+mkdir -p /var/www/third/public_html
+
+chown -R apache:apache /var/www/
+
+
+mkdir -p /var/www/first/log
+mkdir -p /var/www/second/log
+mkdir -p /var/www/third/log
+
+echo "<h1> This is the FIRST website </h1>" >> /var/www/first/public_html/index.html
+echo "<h2> Please come back later The Page will be ready </h2>" >> /var/www/first/public_html/index.html
+echo "<h1> This is the SECOND website </h1>" >> /var/www/second/public_html/index.html
+echo "<h2> Please come back later The Page will be ready </h2>" >> /var/www/second/public_html/index.html
+echo "<h1> This is the THIRD website </h1>" >> /var/www/third/public_html/index.html
+echo "<h2> Please come back later The Page will be ready </h2>" >> /var/www/third/public_html/index.html
+
+
+
+vi /etc/httpd/sites-available/first.conf
+
+<VirtualHost *:80>
+        DocumentRoot /var/www/first/public_html/
+        ServerName httpdsrv1.aywacleaners.com
+        ErrorLog /var/www/first/log/error.log
+        CustomLog /var/www/first/log/requests.log combined
+</VirtualHost>
+
+vi /etc/httpd/sites-available/second.conf
+
+<VirtualHost *:80>
+        DocumentRoot /var/www/second/public_html/
+        ServerName httpdsrv2.aywacleaners.com
+        ErrorLog /var/www/second/log/error.log
+        CustomLog /var/www/second/log/requests.log combined
+</VirtualHost> 
+
+vi /etc/httpd/sites-available/third.conf
+
+<VirtualHost *:80>
+        DocumentRoot /var/www/third/public_html/
+        ServerName httpdsrv3.aywacleaners.com
+        ErrorLog /var/www/third/log/error.log
+        CustomLog /var/www/third/log/requests.log combined
+</VirtualHost> 
+
+
+
+setsebool -P httpd_unified 1
+semanage fcontext -a -t httpd_sys_content_t "/var/www/first/public_html(/.*)?"
+restorecon -R -v /var/www/first
+semanage fcontext -a -t httpd_sys_content_t "/var/www/second/public_html(/.\*)?"
+restorecon -R -v /var/www/second
+semanage fcontext -a -t httpd_log_t "/var/www/first/log(/.*)?"
+restorecon -R -v /var/www/first/log
+semanage fcontext -a -t httpd_log_t "/var/www/second/log(/.*)?"
+restorecon -R -v /var/www/second/log
+
+semanage fcontext -a -t httpd_sys_content_t "/var/www/third/public_html(/.*)?"
+restorecon -R -v /var/www/third
+semanage fcontext -a -t httpd_log_t "/var/www/third/log(/.*)?"
+restorecon -R -v /var/www/third/log
+
+
+ls -dZ /var/www/first/log/
+ls -dZ /var/www/second/log/
+ls -dZ /var/www/third/log/
+ls -dZ /var/www/first/public_html/
+ls -dZ /var/www/second/public_html/
+
+ls -dZ /var/www/third/public_html/
+
+ln -s /etc/httpd/sites-available/first.conf /etc/httpd/sites-enabled/first.conf
+ln -s /etc/httpd/sites-available/second.conf /etc/httpd/sites-enabled/second.conf
+ln -s /etc/httpd/sites-available/third.conf /etc/httpd/sites-enabled/third.conf
+echo "IncludeOptional sites-enabled/*.conf" >> /etc/httpd/conf/httpd.conf
+
+
+
+
+dnf install mod_ssl -y
+
+
