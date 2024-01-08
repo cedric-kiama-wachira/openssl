@@ -1,0 +1,26 @@
+dnf install postfix -y
+systemctl enable postfix
+systemctl start postfix
+senmail ec2-user@localhost <<< "Testing the email service to see if it is working"
+cat /var/spool/mail/ec2-user
+
+
+dnf install -y dovecot
+systemctl start dovecot
+systemctl enable dovecot
+
+firewall-cmd --add-service=imap
+firewall-cmd --add-service=imaps
+
+vi /etc/dovecot/dovecot.conf
+protocols = imap
+listen = *, ::
+
+Match User Cedric
+      PasswordAuthentication yes
+
+dnf install -y squid
+systemctl enable squid.service
+systemct start squid.service
+
+
