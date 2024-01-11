@@ -1,0 +1,173 @@
+# Quick Emulator and Kernel Based Virtual Machine
+dnf install -y qemu-kvm libvirt virt-install virt-viewer
+
+for drv in qemu network nodedev nwfilter secret storage interface; do systemctl start virt${drv}d{,-ro,-admin}.socket; done
+
+virt-host-validate
+
+vi testmachine.xml
+
+<domain type="qemu">
+        <name>testmachine</name>
+        <memory unit="GiB">2</memory>
+        <vcpu>1</vcpu>
+        <os>
+                <type arch='x86_64'>hvm</type>
+        </os>
+</domain>
+
+virsh define testmachine.xml 
+Domain 'testmachine' defined from testmachine.xml
+
+virsh list --all
+ Id   Name          State
+------------------------------
+ -    testmachine   shut off
+
+virsh start testmachine
+Domain 'testmachine' started
+
+
+virsh list 
+ Id   Name          State
+-----------------------------
+ 1    testmachine   running
+
+virsh destroy testmachine
+virsh undefine testmachine --remove-all-storage
+virsh define testmachine.xml
+virsh autostart testmachine
+virsh setvcpus testmachine  2 --config --maximum
+virsh setvcpus testmachine  2 --config 
+virsh setmaxmem testmachine 3027M --config
+reboot # The host server
+
+virsh dominfo testmachine
+Id:             1
+Name:           testmachine
+UUID:           d914d135-4091-4e3a-b62a-53caf708ba62
+OS Type:        hvm
+State:          running
+CPU(s):         2
+CPU time:       1.3s
+Max memory:     3099648 KiB
+Used memory:    3099648 KiB
+Persistent:     yes
+Autostart:      enable
+Managed save:   no
+Security model: selinux
+Security DOI:   0
+Security label: system_u:system_r:svirt_tcg_t:s0:c113,c829 (enforcing)
+Messages:       tainted: use of deprecated configuration settings
+                deprecated configuration: machine type 'pc-i440fx-rhel7.6.0'
+                deprecated configuration: CPU model 'qemu64'
+
+
+# Ubuntu Version
+apt update && apt install -y virt-manager
+
+wget https://cloud-images.ubuntu.com/minimal/releases/mantic/release/ubuntu-23.10-minimal-cloudimg-amd64.img
+
+qemu-img info ubuntu-23.10-minimal-cloudimg-amd64.img
+image: ubuntu-23.10-minimal-cloudimg-amd64.img
+file format: qcow2
+virtual size: 3.5 GiB (3758096384 bytes)
+disk size: 227 MiB
+cluster_size: 65536
+Format specific information:
+    compat: 1.1
+    compression type: zlib
+    lazy refcounts: false
+    refcount bits: 16
+    corrupt: false
+    extended l2: false
+
+
+qemu-img resize ubuntu-23.10-minimal-cloudimg-amd64.img 10G
+qemu-img info ubuntu-23.10-minimal-cloudimg-amd64.img
+image: ubuntu-23.10-minimal-cloudimg-amd64.img
+file format: qcow2
+virtual size: 10 GiB (10737418240 bytes)
+disk size: 227 MiB
+cluster_size: 65536
+Format specific information:
+    compat: 1.1
+    compression type: zlib
+    lazy refcounts: false
+    refcount bits: 16
+    corrupt: false
+    extended l2: false
+
+cp ubuntu-23.10-minimal-cloudimg-amd64.img /var/lib/libvirt/images/
+
+virt-install 
+WARNING  KVM acceleration not available, using 'qemu'
+ERROR    
+--os-variant/--osinfo OS name is required, but no value was
+set or detected.
+
+This is now a fatal error. Specifying an OS name is required
+for modern, performant, and secure virtual machine defaults.
+
+You can see a full list of possible OS name values with:
+
+   virt-install --osinfo list
+
+If your Linux distro is not listed, try one of generic values
+such as: linux2022, linux2020, linux2018, linux2016
+
+If you just need to get the old behavior back, you can use:
+
+  --osinfo detect=on,require=off
+
+Or export VIRTINSTALL_OSINFO_DISABLE_REQUIRE=1
+
+virt-install --import --memory 2048 --disk /var/lib/libvirt/images/ubuntu-23.10-minimal-cloudimg-amd64.img --osinfo ubuntu23.10 --name ubuntuVM --vcpus 1 --graphics none --cloud-init root-password-generate=on
+
+WARNING  KVM acceleration not available, using 'qemu'
+
+Starting install...
+Password for first root login is: bwiFBGg54I2L8pgM
+Installation will continue in 10 seconds (press Enter to skip)...
+
+Creating domain...                                                                                                                                                                  |    0 B  00:00:00     
+Running text console command: virsh --connect qemu:///system console ubuntuVM
+Connected to domain 'ubuntuVM'
+Escape character is ^] (Ctrl + ])
+
+ubuntu login: 
+Domain creation completed.
+
+apt install guestfs-tools -y 
+virsh shutdown ubuntuVM
+virt-customize -a /var/lib/libvirt/images/ubuntu-23.10-minimal-cloudimg-amd64.img --root-password password:root2024 --uninstall cloud-init
+[   0.0] Examining the guest ...
+[  67.7] Setting a random seed
+[  68.0] Uninstalling packages: cloud-init
+[  81.5] Setting passwords
+[  95.5] Finishing off
+
+virsh console ubuntuVM 
+
+Connected to domain 'ubuntuVM'
+Escape character is ^] (Ctrl + ])
+[  OK  ] Finished systemd-user-sess…ervice - Permit User Sessions.
+[  OK  ] Started serial-getty@ttyS0…rvice - Serial Getty on ttyS0.
+         Starting setvtrgb.service - Set console scheme...
+[  OK  ] Finished e2scrub_reap.serv…ine ext4 Metadata Check Snapshots.
+[  OK  ] Finished setvtrgb.service - Set console scheme.
+[  OK  ] Created slice system-getty.slice - Slice /system/getty.
+[  OK  ] Started getty@tty1.service - Getty on tty1.
+[  OK  ] Reached target getty.target - Login Prompts.
+[  OK  ] Finished grub-common.servi…- Record successful boot for GRUB.
+         Starting grub-initrd-fallb…0m - GRUB failed boot detection...
+[  OK  ] Finished grub-initrd-fallb… - GRUB failed boot detection.
+[  OK  ] Started systemd-logind.service - User Login Management.
+[  OK  ] Started unattended-upgrade…0m - Unattended Upgrades Shutdown.
+
+Ubuntu 23.10 ubuntu ttyS0
+
+ubuntu login: root
+Password: 
+Welcome to Ubuntu 23.10 (GNU/Linux 6.5.0-14-generic x86_64)
+

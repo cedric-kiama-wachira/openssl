@@ -1,0 +1,305 @@
+# On AWS - create three disk volumes
+lsblk
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+nvme0n1     259:0    0   30G  0 disk 
+├─nvme0n1p1 259:1    0    1M  0 part 
+├─nvme0n1p2 259:2    0  200M  0 part /boot/efi
+├─nvme0n1p3 259:3    0  600M  0 part /boot
+└─nvme0n1p4 259:4    0 29.2G  0 part /
+nvme1n1     259:5    0  100G  0 disk 
+nvme2n1     259:6    0  100G  0 disk 
+nvme3n1     259:7    0  100G  0 disk 
+
+
+
+file -s /dev/nvme1n1
+file -s /dev/nvme2n1
+file -s /dev/nvme3n1
+
+lsblk -f
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme0n1                                                                            
+├─nvme0n1p1                                                                        
+├─nvme0n1p2 vfat   FAT16       7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot  1dde521c-d910-4d8f-a14a-2704a5d4dbd4  253.2M    53% /boot
+└─nvme0n1p4 xfs          root  2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme1n1                                                                            
+nvme2n1                                                                            
+nvme3n1                            
+
+mkfs -t xfs /dev/nvme1n1
+mkfs -t xfs /dev/nvme2n1
+mkfs -t xfs /dev/nvme3n1
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme0n1                                                                            
+├─nvme0n1p1                                                                        
+├─nvme0n1p2 vfat   FAT16       7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot  1dde521c-d910-4d8f-a14a-2704a5d4dbd4  253.2M    53% /boot
+└─nvme0n1p4 xfs          root  2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme1n1     xfs                5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc                
+nvme2n1     xfs                70040dec-2ebe-44a7-8e7f-affd87a1a9e4                
+nvme3n1     xfs                9e9c9fce-5a96-4a20-a192-be25c13f8297
+
+mkdir /data1
+mkdir /data2
+mkdir /data3
+
+blkid
+/dev/nvme0n1p3: LABEL="boot" UUID="1dde521c-d910-4d8f-a14a-2704a5d4dbd4" TYPE="xfs" PARTUUID="cb07c243-bc44-4717-853e-28852021225b"
+/dev/nvme0n1p1: PARTUUID="fac7f1fb-3e8d-4137-a512-961de09a5549"
+/dev/nvme0n1p4: LABEL="root" UUID="2cfdcca4-d3e3-40cb-b58e-0bed76bdceec" TYPE="xfs" PARTUUID="6264d520-3fb9-423f-8ab8-7a0a8e3d3562"
+/dev/nvme0n1p2: SEC_TYPE="msdos" UUID="7B77-95E7" TYPE="vfat" PARTUUID="68b2905b-df3e-4fb3-80fa-49d1e773aa33"
+/dev/nvme3n1: UUID="9e9c9fce-5a96-4a20-a192-be25c13f8297" TYPE="xfs"
+/dev/nvme2n1: UUID="70040dec-2ebe-44a7-8e7f-affd87a1a9e4" TYPE="xfs"
+/dev/nvme1n1: UUID="5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc" TYPE="xfs"
+
+xfs_admin -L data_one /dev/nvme1n1 
+xfs_admin -L data_two /dev/nvme2n1 
+xfs_admin -L data_three /dev/nvme3n1 
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL      UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme0n1                                                                                 
+├─nvme0n1p1                                                                             
+├─nvme0n1p2 vfat   FAT16            7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot       1dde521c-d910-4d8f-a14a-2704a5d4dbd4  253.2M    53% /boot
+└─nvme0n1p4 xfs          root       2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme1n1     xfs          data_one   5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc                
+nvme2n1     xfs          data_two   70040dec-2ebe-44a7-8e7f-affd87a1a9e4                
+nvme3n1     xfs          data_three 9e9c9fce-5a96-4a20-a192-be25c13f8297
+
+cp /etc/fstab /etc/fstab.bkp
+
+echo "UUID=5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc  /data1  xfs  defaults,nofail  0  2" >> /etc/fstab
+echo "UUID=70040dec-2ebe-44a7-8e7f-affd87a1a9e4  /data2  xfs  defaults,nofail  0  2" >> /etc/fstab
+echo "UUID=9e9c9fce-5a96-4a20-a192-be25c13f8297  /data3  xfs  defaults,nofail  0  2" >> /etc/fstab
+
+cat /etc/fstab
+UUID=2cfdcca4-d3e3-40cb-b58e-0bed76bdceec	/	xfs	defaults	0	0
+UUID=1dde521c-d910-4d8f-a14a-2704a5d4dbd4	/boot	xfs	defaults	0	0
+UUID=7B77-95E7	/boot/efi	vfat	defaults,uid=0,gid=0,umask=077,shortname=winnt	0	2
+UUID=5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc  /data1  xfs  defaults,nofail  0  2
+UUID=70040dec-2ebe-44a7-8e7f-affd87a1a9e4  /data2  xfs  defaults,nofail  0  2
+UUID=9e9c9fce-5a96-4a20-a192-be25c13f8297  /data3  xfs  defaults,nofail  0  2
+
+mount -a
+mount: (hint) your fstab has been modified, but systemd still uses
+       the old version; use 'systemctl daemon-reload' to reload.
+
+systemctl daemon-reload
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL      UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme0n1                                                                                 
+├─nvme0n1p1                                                                             
+├─nvme0n1p2 vfat   FAT16            7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot       1dde521c-d910-4d8f-a14a-2704a5d4dbd4  253.2M    53% /boot
+└─nvme0n1p4 xfs          root       2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme1n1     xfs          data_one   5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc   99.2G     1% /data1
+nvme2n1     xfs          data_two   70040dec-2ebe-44a7-8e7f-affd87a1a9e4   99.2G     1% /data2
+nvme3n1     xfs          data_three 9e9c9fce-5a96-4a20-a192-be25c13f8297   99.2G     1% /data3
+
+
+# Add two more disks one for swap practice and another one for partitioning practice
+
+mkfs.xfs -L swap_on_disk /dev/nvme5n1
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL        UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme1n1     xfs          data_three   9e9c9fce-5a96-4a20-a192-be25c13f8297   99.2G     1% /data3
+nvme2n1     xfs          data_one     5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc   99.2G     1% /data1
+nvme0n1                                                                                   
+├─nvme0n1p1                                                                               
+├─nvme0n1p2 vfat   FAT16              7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot         1dde521c-d910-4d8f-a14a-2704a5d4dbd4  252.9M    53% /boot
+└─nvme0n1p4 xfs          root         2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme3n1     xfs          data_two     70040dec-2ebe-44a7-8e7f-affd87a1a9e4   99.2G     1% /data2
+nvme4n1                                                                                   
+nvme5n1     xfs          swap_on_disk 97644db3-683b-4d0d-b953-c97c7de2f6ec
+
+cfdisk /dev/nvme4n1
+gpt
+40G
+
+mkfs.xfs -L data_four_p1 /dev/nvme4n1p1
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL        UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme1n1     xfs          data_three   9e9c9fce-5a96-4a20-a192-be25c13f8297   99.2G     1% /data3
+nvme2n1     xfs          data_one     5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc   99.2G     1% /data1
+nvme0n1                                                                                   
+├─nvme0n1p1                                                                               
+├─nvme0n1p2 vfat   FAT16              7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot         1dde521c-d910-4d8f-a14a-2704a5d4dbd4  252.9M    53% /boot
+└─nvme0n1p4 xfs          root         2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme3n1     xfs          data_two     70040dec-2ebe-44a7-8e7f-affd87a1a9e4   99.2G     1% /data2
+nvme4n1                                                                                   
+└─nvme4n1p1 xfs          data_four_p1 2dc62df3-c8a8-49cd-9d1b-7975918966a1                
+nvme5n1     xfs          swap_on_disk 97644db3-683b-4d0d-b953-c97c7de2f6ec
+
+
+echo "UUID=2dc62df3-c8a8-49cd-9d1b-7975918966a1  /data4_p1  xfs  defaults,nofail  0  2" >> /etc/fstab
+
+cat /etc/fstab
+UUID=2cfdcca4-d3e3-40cb-b58e-0bed76bdceec	/	xfs	defaults	0	0
+UUID=1dde521c-d910-4d8f-a14a-2704a5d4dbd4	/boot	xfs	defaults	0	0
+UUID=7B77-95E7	/boot/efi	vfat	defaults,uid=0,gid=0,umask=077,shortname=winnt	0	2
+UUID=5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc  /data1  xfs  defaults,nofail  0  2
+UUID=70040dec-2ebe-44a7-8e7f-affd87a1a9e4  /data2  xfs  defaults,nofail  0  2
+UUID=9e9c9fce-5a96-4a20-a192-be25c13f8297  /data3  xfs  defaults,nofail  0  2
+UUID=2dc62df3-c8a8-49cd-9d1b-7975918966a1  /data4_p1  xfs  defaults,nofail  0  2
+
+systemctl daemon-reload
+mount -a
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL        UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme1n1     xfs          data_three   9e9c9fce-5a96-4a20-a192-be25c13f8297   99.2G     1% /data3
+nvme2n1     xfs          data_one     5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc   99.2G     1% /data1
+nvme0n1                                                                                   
+├─nvme0n1p1                                                                               
+├─nvme0n1p2 vfat   FAT16              7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot         1dde521c-d910-4d8f-a14a-2704a5d4dbd4  252.9M    53% /boot
+└─nvme0n1p4 xfs          root         2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme3n1     xfs          data_two     70040dec-2ebe-44a7-8e7f-affd87a1a9e4   99.2G     1% /data2
+nvme4n1                                                                                   
+└─nvme4n1p1 xfs          data_four_p1 2dc62df3-c8a8-49cd-9d1b-7975918966a1   39.6G     1% /data4_p1
+nvme5n1     xfs          swap_on_disk 97644db3-683b-4d0d-b953-c97c7de2f6ec
+
+
+
+# Swap Partition on Disk
+
+swapon --show 
+
+lsblk
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+nvme1n1     259:0    0  100G  0 disk /data3
+nvme2n1     259:1    0  100G  0 disk /data1
+nvme0n1     259:2    0   30G  0 disk 
+├─nvme0n1p1 259:4    0    1M  0 part 
+├─nvme0n1p2 259:5    0  200M  0 part /boot/efi
+├─nvme0n1p3 259:6    0  600M  0 part /boot
+└─nvme0n1p4 259:7    0 29.2G  0 part /
+nvme3n1     259:3    0  100G  0 disk /data2
+nvme4n1     259:8    0  120G  0 disk 
+└─nvme4n1p1 259:11   0   40G  0 part /data4_p1
+nvme5n1     259:9    0   50G  0 disk 
+
+
+cfdisk /dev/nvme5n1
+gpt
+NEW
+16G
+Linux swap 
+
+mkswap -L data5_swap -f /dev/nvme5n1p1
+mkswap: /dev/nvme5n1p1: warning: wiping old swap signature.
+Setting up swapspace version 1, size = 16 GiB (17179865088 bytes)
+LABEL=data5_swap, UUID=8f406a0b-634d-4e72-87ed-4eb00e9b7631
+
+swapon --verbose /dev/nvme5n1p1 
+swapon: /dev/nvme5n1p1: found signature [pagesize=4096, signature=swap]
+swapon: /dev/nvme5n1p1: pagesize=4096, swapsize=17179869184, devsize=17179869184
+swapon /dev/nvme5n1p1
+
+swapon --show
+NAME           TYPE      SIZE USED PRIO
+/dev/nvme5n1p1 partition  16G   0B   -2
+
+
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL        UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme1n1     xfs          data_three   9e9c9fce-5a96-4a20-a192-be25c13f8297   99.2G     1% /data3
+nvme2n1     xfs          data_one     5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc   99.2G     1% /data1
+nvme0n1                                                                                   
+├─nvme0n1p1                                                                               
+├─nvme0n1p2 vfat   FAT16              7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot         1dde521c-d910-4d8f-a14a-2704a5d4dbd4  252.9M    53% /boot
+└─nvme0n1p4 xfs          root         2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme3n1     xfs          data_two     70040dec-2ebe-44a7-8e7f-affd87a1a9e4   99.2G     1% /data2
+nvme4n1                                                                                   
+└─nvme4n1p1 xfs          data_four_p1 2dc62df3-c8a8-49cd-9d1b-7975918966a1   39.6G     1% /data4_p1
+nvme5n1                                                                                   
+└─nvme5n1p1 swap   1     data5_swap   8f406a0b-634d-4e72-87ed-4eb00e9b7631                [SWAP]
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL        UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme1n1     xfs          data_three   9e9c9fce-5a96-4a20-a192-be25c13f8297   99.2G     1% /data3
+nvme2n1     xfs          data_one     5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc   99.2G     1% /data1
+nvme0n1                                                                                   
+├─nvme0n1p1                                                                               
+├─nvme0n1p2 vfat   FAT16              7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot         1dde521c-d910-4d8f-a14a-2704a5d4dbd4  252.9M    53% /boot
+└─nvme0n1p4 xfs          root         2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme3n1     xfs          data_two     70040dec-2ebe-44a7-8e7f-affd87a1a9e4   99.2G     1% /data2
+nvme4n1                                                                                   
+└─nvme4n1p1 xfs          data_four_p1 2dc62df3-c8a8-49cd-9d1b-7975918966a1   39.6G     1% /data4_p1
+nvme5n1                                                                                   
+├─nvme5n1p1 swap   1     data5_swap   8f406a0b-634d-4e72-87ed-4eb00e9b7631                [SWAP]
+└─nvme5n1p2          
+
+
+dd if=/dev/zero of=/dev/nvme5n1p2 bs=1M count=16384 status=progress
+17179869184 bytes (17 GB, 16 GiB) copied, 117 s, 147 MB/s
+16384+0 records in
+16384+0 records out
+17179869184 bytes (17 GB, 16 GiB) copied, 132.111 s, 130 MB/s
+
+chmod 0600 /dev/nvme5n1p2
+
+mkswap -L data5_swap_dd /dev/nvme5n1p2
+mkswap: /dev/nvme5n1p2: warning: wiping old swap signature.
+Setting up swapspace version 1, size = 16 GiB (17179865088 bytes)
+LABEL=data5_swap_dd, UUID=c50b580c-3130-40f5-8a31-4c3fcd0d9e11
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL         UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme1n1     xfs          data_three    9e9c9fce-5a96-4a20-a192-be25c13f8297   99.2G     1% /data3
+nvme2n1     xfs          data_one      5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc   99.2G     1% /data1
+nvme0n1                                                                                    
+├─nvme0n1p1                                                                                
+├─nvme0n1p2 vfat   FAT16               7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot          1dde521c-d910-4d8f-a14a-2704a5d4dbd4  252.9M    53% /boot
+└─nvme0n1p4 xfs          root          2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme3n1     xfs          data_two      70040dec-2ebe-44a7-8e7f-affd87a1a9e4   99.2G     1% /data2
+nvme4n1                                                                                    
+└─nvme4n1p1 xfs          data_four_p1  2dc62df3-c8a8-49cd-9d1b-7975918966a1   39.6G     1% /data4_p1
+nvme5n1                                                                                    
+├─nvme5n1p1 swap   1     data5_swap    8f406a0b-634d-4e72-87ed-4eb00e9b7631                [SWAP]
+└─nvme5n1p2 swap   1     data5_swap_dd c50b580c-3130-40f5-8a31-4c3fcd0d9e11
+
+
+swapon
+NAME           TYPE      SIZE USED PRIO
+/dev/nvme5n1p1 partition  16G 256K   -2
+
+swapoff /dev/nvme5n1p1
+swapon /dev/nvme5n1p2
+
+swapon
+NAME           TYPE      SIZE USED PRIO
+/dev/nvme5n1p2 partition  16G   0B   -2
+
+lsblk -f
+NAME        FSTYPE FSVER LABEL         UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme1n1     xfs          data_three    9e9c9fce-5a96-4a20-a192-be25c13f8297   99.2G     1% /data3
+nvme2n1     xfs          data_one      5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc   99.2G     1% /data1
+nvme0n1                                                                                    
+├─nvme0n1p1                                                                                
+├─nvme0n1p2 vfat   FAT16               7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot          1dde521c-d910-4d8f-a14a-2704a5d4dbd4  252.9M    53% /boot
+└─nvme0n1p4 xfs          root          2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme3n1     xfs          data_two      70040dec-2ebe-44a7-8e7f-affd87a1a9e4   99.2G     1% /data2
+nvme4n1                                                                                    
+└─nvme4n1p1 xfs          data_four_p1  2dc62df3-c8a8-49cd-9d1b-7975918966a1   39.6G     1% /data4_p1
+nvme5n1                                                                                    
+├─nvme5n1p1 swap   1     data5_swap    8f406a0b-634d-4e72-87ed-4eb00e9b7631                
+└─nvme5n1p2 swap   1     data5_swap_dd c50b580c-3130-40f5-8a31-4c3fcd0d9e11                [SWAP]
+
+
