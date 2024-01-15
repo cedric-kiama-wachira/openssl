@@ -275,14 +275,14 @@ nvme5n1
 └─nvme5n1p2 swap   1     data5_swap_dd c50b580c-3130-40f5-8a31-4c3fcd0d9e11
 
 
-swapon
+swapon --show
 NAME           TYPE      SIZE USED PRIO
 /dev/nvme5n1p1 partition  16G 256K   -2
 
 swapoff /dev/nvme5n1p1
 swapon /dev/nvme5n1p2
 
-swapon
+swapon --show
 NAME           TYPE      SIZE USED PRIO
 /dev/nvme5n1p2 partition  16G   0B   -2
 
@@ -302,4 +302,36 @@ nvme5n1
 ├─nvme5n1p1 swap   1     data5_swap    8f406a0b-634d-4e72-87ed-4eb00e9b7631                
 └─nvme5n1p2 swap   1     data5_swap_dd c50b580c-3130-40f5-8a31-4c3fcd0d9e11                [SWAP]
 
+File systems mounting
+
+echo "UUID=8f406a0b-634d-4e72-87ed-4eb00e9b7631  none  swap  defaults,nofail  0  0" >> /etc/fstab
+echo "#UUID=c50b580c-3130-40f5-8a31-4c3fcd0d9e11  none  swap  defaults,nofail  0  0" >> /etc/fstab
+
+sblk -f
+NAME        FSTYPE FSVER LABEL         UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+nvme1n1                                                                                    
+├─nvme1n1p1 swap   1     data5_swap    8f406a0b-634d-4e72-87ed-4eb00e9b7631                [SWAP]
+└─nvme1n1p2 swap   1     data5_swap_dd c50b580c-3130-40f5-8a31-4c3fcd0d9e11                
+nvme2n1                                                                                    
+└─nvme2n1p1 xfs          data_four_p1  2dc62df3-c8a8-49cd-9d1b-7975918966a1   39.6G     1% /data4_p1
+nvme3n1     xfs          data_three    9e9c9fce-5a96-4a20-a192-be25c13f8297   99.2G     1% /data3
+nvme0n1                                                                                    
+├─nvme0n1p1                                                                                
+├─nvme0n1p2 vfat   FAT16               7B77-95E7                             192.8M     3% /boot/efi
+├─nvme0n1p3 xfs          boot          1dde521c-d910-4d8f-a14a-2704a5d4dbd4  252.9M    53% /boot
+└─nvme0n1p4 xfs          root          2cfdcca4-d3e3-40cb-b58e-0bed76bdceec     26G    11% /
+nvme5n1     xfs          data_one      5d1cbba2-89ae-4d94-bdbb-8eee885d7ddc   99.2G     1% /data1
+nvme4n1     xfs          data_two      70040dec-2ebe-44a7-8e7f-affd87a1a9e4   99.2G     1% /data2
+
+# On Demand Mounting
+
+dnf install autofs -y
+systemctl enable autofs
+systemctl start autofs
+
+dnf install nfs-utils -y
+systemctl enable nfs-server
+systemctl start nfs-server
+
+vi /etc/exports
 
