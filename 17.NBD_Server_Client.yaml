@@ -30,3 +30,8 @@ modprobe nbd
 vi /etc/modules-load.d/modules.conf
 nbd
 
+nbd-client <server_ip> -N partition1
+
+mkdir /mnt_from_nbd_srv
+mount /dev/nbd0 /mnt_from_nbd_srv
+ls /mnt_from_nbd_srv
