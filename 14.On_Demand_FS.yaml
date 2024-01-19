@@ -1,0 +1,45 @@
+dnf install autofs -y
+systemctl enable autofs.service
+systemctl start autofs.service
+dnf install nfs-utils -y
+systemctl enable nfs-server
+systemctl start nfs-server
+
+vi /etc/exports
+/etc 127.0.0.1(ro)
+
+vi /etc/exports
+#/shared_via_nfs 0.0.0.0(rw)
+/packages *
+/database *
+/read_only *
+
+mkdir /packages
+mkdir /database
+mkdir /read_only 
+
+touch /packages/pkg_files{1..10}
+touch /database/db_files{1..10}
+touch /read_only/ro_files{1..10}  
+
+mkdir /myautoshares/
+
+vi /etc/auto.master
+#/shares/ /shared_via_nfs/auto.shares --timeout=400
+/myautoshares   /etc/auto.sharedfs      --timeout=35
+
+cp /etc/auto.misc /etc/auto.sharedfs
+
+vi /etc/auto.sharedfs
+
+packages        -fstype=nfs     172.31.70.182:/packages
+database        -fstype=nfs4     172.31.70.182:/database
+read_only       -fstype=auto,ro    172.31.70.182:/read_only
+
+showmount -e 172.31.70.18
+
+
+
+
+
+

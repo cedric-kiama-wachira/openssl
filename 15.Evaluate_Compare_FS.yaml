@@ -1,0 +1,9 @@
+findmnt
+
+findmnt -t xfs
+findmnt -t ext4
+findmnt -t xfs,ext4
+
+mount -o ro /dev/partition /mount_point
+
+

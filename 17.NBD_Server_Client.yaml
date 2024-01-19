@@ -1,0 +1,32 @@
+# On Server
+apt purge -y nfs-kernel-server
+apt install -y nbd-server
+lsblk
+
+/dev/xvda1
+
+vi /etc/nbd-server/config
+# In order to run nbd as root user we should comment out the following
+#       user = nbd
+#       group = nbd
+allowlist = true
+
+# At the end of the file we can add below
+[partition1]
+  exportname = /dev/xvda1
+
+:wq 
+
+systemctl restart nbd-server.service
+
+# From Server side the below port needs to be opened
+10809
+
+# On Client
+apt purge -y nfs-common
+apt install -y nbd-client
+modprobe nbd
+
+vi /etc/modules-load.d/modules.conf
+nbd
+

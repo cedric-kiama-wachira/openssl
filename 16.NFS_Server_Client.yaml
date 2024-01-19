@@ -1,0 +1,21 @@
+# SERVER SIDE
+apt install -y nfs-kernel-server
+
+mkdir /nfs_share_ro
+mkdir /nfs_share_rw
+
+vi /etc/exports
+/nfs_share_ro  *(ro)
+/nfs_share_rw  *(rw)
+
+exportfs -r
+exportfs -v
+
+# On AWS Security Groups for server
+allow port 2049
+
+# CLIENT SIDE
+apt install -y nfs-common
+
+
+
