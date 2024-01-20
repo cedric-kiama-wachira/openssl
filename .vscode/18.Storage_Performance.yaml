@@ -1,0 +1,24 @@
+# Monitoring CPU and Memory we can use
+top 
+htop 
+
+# Storage Monitoring
+sysstat package - iostat(input and output) and pidstat(process id statistics)
+
+apt install -y sysstat
+
+iostat
+iostat 10
+iostat -d -h 
+
+dd if=/dev/zero of=DELETEME bs=1 count=1000000 oflag=dsync & 
+
+iostat 1
+iostat -p ALL
+iostat -p xvda
+pidstat -d --human
+pidstat -d --human 1
+ps 1931
+kill 1931
+
+

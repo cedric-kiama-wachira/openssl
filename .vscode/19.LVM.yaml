@@ -1,0 +1,54 @@
+# Abbreviations
+pv
+vg 
+lv
+pe
+
+dnf install -y lvm2
+lvmdiskscan
+lsblk -f
+
+/dev/nvme1n1                                                                            
+/dev/nvme5n1                                                                            
+/dev/nvme3n1                                                                            
+/dev/nvme2n1                                                                            
+/dev/nvme4n1 
+
+pvcreate /dev/nvme1n1 /dev/nvme2n1
+  Physical volume "/dev/nvme1n1" successfully created.
+  Physical volume "/dev/nvme2n1" successfully created.
+  Creating devices file /etc/lvm/devices/system.devices
+
+pvs 
+
+vgcreate my_volume /dev/nvme1n1 /dev/nvme2n1
+
+vgs
+
+pvcreate /dev/nvme3n1
+vgextend my_volume /dev/nvme3n1
+
+vgreduce my_volume /dev/nvme3n1
+  Removed "/dev/nvme3n1" from volume group "my_volume"
+
+pvremove /dev/nvme3n1
+  Labels on physical volume "/dev/nvme3n1" successfully wiped.
+
+lvcreate --size 100G --name partition_one my_volume
+  Logical volume "partition_one" created.
+
+lvcreate --size 80G --name partition_two my_volume
+  Logical volume "partition_two" created.
+
+lvs
+
+lvresize --extents 100%VG my_volume/partition_two
+lvresize --size 80G my_volume/partition_two
+
+lvdisplay
+LV Path                /dev/my_volume/partition_one
+mkfs.xfs -L "DataOne" /dev/my_volume/partition_one
+mkfs.xfs -L "DataTwo" /dev/my_volume/partition_two
+
+lvresize --resizefs --extents 100%VG my_volume/partition_two
+lvresize --resizefs --size 80G my_volume/partition_two
