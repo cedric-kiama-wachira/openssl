@@ -1,0 +1,40 @@
+# Create an EC2 Redhat Instance and add 5 disks of 30GB
+lsblk -f
+NAME    FSTYPE FSVER LABEL UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+xvda                                                                           
+├─xvda1                                                                        
+├─xvda2 vfat   FAT16       7B77-95E7                             192.8M     3% /boot/efi
+├─xvda3 xfs          boot  1dde521c-d910-4d8f-a14a-2704a5d4dbd4  281.4M    47% /boot
+└─xvda4 xfs          root  2cfdcca4-d3e3-40cb-b58e-0bed76bdceec   47.4G     4% /
+xvdf                                                                           
+xvdg                                                                           
+xvdh                                                                           
+xvdi                                                                           
+xvdj                 
+
+# use the first two disks and create an EXT4 and XFS file system on them then mount both of them
+mkdir /ext4-home
+mkdir /xfs-home
+
+mkfs.ext4 -L EXT4_US_GR_PR /dev/xvdf 
+mkfs.xfs -L XFS_US_GR_PR /dev/xvdg
+
+lsblk -f
+NAME    FSTYPE FSVER LABEL         UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+xvda                                                                                   
+├─xvda1                                                                                
+├─xvda2 vfat   FAT16               7B77-95E7                             192.8M     3% /boot/efi
+├─xvda3 xfs          boot          1dde521c-d910-4d8f-a14a-2704a5d4dbd4  281.4M    47% /boot
+└─xvda4 xfs          root          2cfdcca4-d3e3-40cb-b58e-0bed76bdceec   47.4G     4% /
+xvdf    ext4   1.0   EXT4_US_GR_PR 10c6ecbd-05e3-4bf9-8a50-ccd66c12f660                
+xvdg    xfs          XFS_US_GR_PR  84d1f822-a5a7-4bb8-87cf-6a7a223465b5                
+xvdh                                                                                   
+xvdi                                                                                   
+xvdj                  
+
+
+# mount the first two disks and add gquota,uquota and pquota mount options
+vp /etc/fstab /etc/fstab.original
+vi /etc/fstab
+
+

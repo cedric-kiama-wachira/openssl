@@ -1,0 +1,70 @@
+# Using Cryptsetup
+dnf install -y cryptsetup
+
+pvcreate /dev/nvme3n1 /dev/nvme4n1
+
+vgcreate my_other_volume /dev/nvme3n1 /dev/nvme4n1
+
+lvcreate --size 100G --name partition_three my_other_volume
+lvcreate --size 120G --name partition_four my_other_volume
+
+cryptsetup --verify-passphrase open --type plain /dev/my_other_volume/partition_three mysecuredlvone
+cryptsetup --verify-passphrase open --type plain /dev/my_other_volume/partition_four mysecuredlvtwo
+
+pass
+
+dmsetup ls
+
+mysecuredlvone	(253:4)
+mysecuredlvtwo	(253:5)
+
+mkfs.xfs -L "DataThree" /dev/mapper/mysecuredlvone
+mkfs.xfs -L "DataFour" /dev/my_other_volume/partition_four
+mkfs.xfs: cannot open /dev/my_other_volume/partition_four: Device or resource busy
+mkfs.xfs -L "DataFour" /dev/mapper/mysecuredlvtwo
+
+mount  /dev/mapper/mysecuredlvone /data3
+mount  /dev/mapper/mysecuredlvtwo /data4
+
+umount /data3
+umount /data4
+
+cryptsetup close mysecuredlvone
+cryptsetup close mysecuredlvtwo
+
+# Using LUKS
+
+pvcreate /dev/nvme5n1
+vgcreate my_third_volume_group /dev/nvme5n1
+  Volume group "my_third_volume_group" successfully created
+lvcreate --size 49.99G --name partition_four my_third_volume_group
+  Logical volume "partition_four" created.
+
+
+cryptsetup luksFormat /dev/my_third_volume_group/partition_four
+
+WARNING!
+========
+This will overwrite data on /dev/my_third_volume_group/partition_four irrevocably.
+
+Are you sure? (Type 'yes' in capital letters): YES
+Enter passphrase for /dev/my_third_volume_group/partition_four: 
+Verify passphrase:
+
+luks@pass
+
+cryptsetup luksChangeKey /dev/my_third_volume_group/partition_four 
+Enter passphrase to be changed: 
+Enter new passphrase: 
+Verify passphrase: 
+
+newluks@pass
+
+cryptsetup open /dev/my_third_volume_group/partition_four mylukssecuredlvone
+Enter passphrase for /dev/my_third_volume_group/partition_four:
+
+
+mkfs.xfs -L DataFive /dev/mapper/mylukssecuredlvone
+mkdir /data5
+mount /dev/mapper/mylukssecuredlvone /data5
+

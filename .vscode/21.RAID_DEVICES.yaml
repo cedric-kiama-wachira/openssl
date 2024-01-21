@@ -1,0 +1,28 @@
+Level 0 RAID Not Redundant
+Level 1 RAID keeps the same copy of data across all disks involved
+Level 5 RAID 
+Level 6 RAID 
+Level RAID 1 + 0
+
+mdadm --create /dev/md0 --level=0 --raid-devices=3 /dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md0 started.
+
+mkfs.xfs /dev/md0
+
+mdadm --stop /dev/md0 
+mdadm --zero-superblock /dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1
+
+mdadm --create /dev/md0 --level=1 --raid-devices=2 /dev/nvme1n1 /dev/nvme2n1 --spare-devices=1 /dev/nvme3n1
+
+mdadm --stop /dev/md0
+mdadm --zero-superblock /dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1
+
+mdadm --create /dev/md0 --level=1 --raid-devices=2 /dev/nvme1n1 /dev/nvme2n1
+mdadm --manage /dev/md0 --add /dev/nvme3n1
+
+cat /proc/mdstat
+
+mdadm --manage /dev/md0 --remove /dev/nvme3n1
+
+
