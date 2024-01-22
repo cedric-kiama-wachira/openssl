@@ -12,29 +12,127 @@ xvdh
 xvdi                                                                           
 xvdj                 
 
-# use the first two disks and create an EXT4 and XFS file system on them then mount both of them
-mkdir /ext4-home
-mkdir /xfs-home
+dnf install -y quota
 
-mkfs.ext4 -L EXT4_US_GR_PR /dev/xvdf 
-mkfs.xfs -L XFS_US_GR_PR /dev/xvdg
+# use the first two disks and create an EXT4 and XFS file system on them then mount both of them
+mkdir /ext4-one
+mkdir /ext4-two
+
+mkfs.ext4 -L EXT4_US_GR_PR_1 /dev/xvdf
+mkfs.ext4 -L EXT4_US_GR_PR_1 /dev/xvdf
 
 lsblk -f
-NAME    FSTYPE FSVER LABEL         UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
-xvda                                                                                   
-├─xvda1                                                                                
-├─xvda2 vfat   FAT16               7B77-95E7                             192.8M     3% /boot/efi
-├─xvda3 xfs          boot          1dde521c-d910-4d8f-a14a-2704a5d4dbd4  281.4M    47% /boot
-└─xvda4 xfs          root          2cfdcca4-d3e3-40cb-b58e-0bed76bdceec   47.4G     4% /
-xvdf    ext4   1.0   EXT4_US_GR_PR 10c6ecbd-05e3-4bf9-8a50-ccd66c12f660                
-xvdg    xfs          XFS_US_GR_PR  84d1f822-a5a7-4bb8-87cf-6a7a223465b5                
-xvdh                                                                                   
-xvdi                                                                                   
-xvdj                  
+NAME    FSTYPE FSVER LABEL           UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+xvda                                                                                     
+├─xvda1                                                                                  
+├─xvda2 vfat   FAT16                 7B77-95E7                             192.8M     3% /boot/efi
+├─xvda3 xfs          boot            1dde521c-d910-4d8f-a14a-2704a5d4dbd4  281.5M    47% /boot
+└─xvda4 xfs          root            2cfdcca4-d3e3-40cb-b58e-0bed76bdceec   57.3G     3% /
+xvdf    ext4   1.0   EXT4_US_GR_PR_1 638dd685-ca04-47d2-8954-364fe4e38772   
+xvdg    ext4   1.0   EXT4_US_GR_PR_2 0345e065-a072-46ce-90f5-8cf4c45a99a9   
 
-
-# mount the first two disks and add gquota,uquota and pquota mount options
-vp /etc/fstab /etc/fstab.original
+# EXT4 File System
+# mount the first two disks and add gquota and uquota mount options
+cp /etc/fstab /etc/fstab.original
 vi /etc/fstab
 
+UUID=638dd685-ca04-47d2-8954-364fe4e38772 /ext4-one ext4 defaults,usrquota,grpquota 0 2
+UUID=0345e065-a072-46ce-90f5-8cf4c45a99a9 /ext4-two ext4 defaults,usrquota,grpquota 0 2
 
+mount -a 
+systemctl restart-daemon
+systemctl reboot
+lsblk -f
+NAME    FSTYPE FSVER LABEL           UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+xvda                                                                                     
+├─xvda1                                                                                  
+├─xvda2 vfat   FAT16                 7B77-95E7                             192.8M     3% /boot/efi
+├─xvda3 xfs          boot            1dde521c-d910-4d8f-a14a-2704a5d4dbd4  281.5M    47% /boot
+└─xvda4 xfs          root            2cfdcca4-d3e3-40cb-b58e-0bed76bdceec   57.3G     3% /
+xvdf    ext4   1.0   EXT4_US_GR_PR_1 638dd685-ca04-47d2-8954-364fe4e38772   27.8G     0% /ext4-one
+xvdg    ext4   1.0   EXT4_US_GR_PR_2 0345e065-a072-46ce-90f5-8cf4c45a99a9   27.8G     0% /ext4-two
+xvdh                                                                                     
+xvdi                                                                                     
+xvdj
+
+quotacheck --create-files --user --group /ext4-one
+quotaon /ext4-one
+
+chown -R ec2-user:ec2-user /ext4-two
+
+quotacheck --create-files --user --group /ext4-two
+quotaon /ext4-two
+
+
+# XFS
+lsblk -f
+NAME    FSTYPE FSVER LABEL UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+xvda                                                                           
+├─xvda1                                                                        
+├─xvda2 vfat   FAT16       7B77-95E7                             192.8M     3% /boot/efi
+├─xvda3 xfs          boot  1dde521c-d910-4d8f-a14a-2704a5d4dbd4  281.4M    47% /boot
+└─xvda4 xfs          root  2cfdcca4-d3e3-40cb-b58e-0bed76bdceec   27.5G     6% /
+xvdf                                                                           
+xvdg             
+
+
+mkfs.xfs -L XFS_US_GR_PR /dev/xvdf
+mkfs.xfs -L XFS_US_GR_PB /dev/xvdg
+
+
+cp /etc/fstab /etc/fstab.original
+
+lsblk -f
+NAME    FSTYPE FSVER LABEL        UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+xvda                                                                                  
+├─xvda1                                                                               
+├─xvda2 vfat   FAT16              7B77-95E7                             192.8M     3% /boot/efi
+├─xvda3 xfs          boot         1dde521c-d910-4d8f-a14a-2704a5d4dbd4  281.4M    47% /boot
+└─xvda4 xfs          root         2cfdcca4-d3e3-40cb-b58e-0bed76bdceec   27.5G     6% /
+xvdf    xfs          XFS_US_GR_PR 5bc439c7-59b5-4804-a908-acb06fcdf93d                
+xvdg    xfs          XFS_US_GR_PB e10ae902-6b6b-48a0-be7a-7cd7a2b2ad74
+
+
+mkdir /xfs-one
+mkdir /xfs-two
+
+vi /etc/fstab
+UUID=2cfdcca4-d3e3-40cb-b58e-0bed76bdceec	/	xfs	defaults	0	0
+UUID=1dde521c-d910-4d8f-a14a-2704a5d4dbd4	/boot	xfs	defaults	0	0
+UUID=7B77-95E7	/boot/efi	vfat	defaults,uid=0,gid=0,umask=077,shortname=winnt	0	2
+UUID=5bc439c7-59b5-4804-a908-acb06fcdf93d /xfs-one xfs defaults,uquota,gquota,pquota 0 2
+UUID=e10ae902-6b6b-48a0-be7a-7cd7a2b2ad74 /xfs-two xfs defaults,uquota,gquota,pquota 0 2
+
+findmnt -t xfs
+TARGET     SOURCE     FSTYPE OPTIONS
+/          /dev/xvda4 xfs    rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota
+├─/xfs-two /dev/xvdg  xfs    rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,usrquota,prjquota,grpquota
+├─/xfs-one /dev/xvdf  xfs    rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,usrquota,prjquota,grpquota
+└─/boot    /dev/xvda3 xfs    rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota
+
+bc <<< 1024*1.5
+1536.0
+
+xfs_quota -x -c 'limit bsoft=1g bhard=1536m ec2-user' /xfs-one
+
+xfs_quota -x -c report /xfs-one
+User quota on /xfs-one (/dev/xvdf)
+                               Blocks                     
+User ID          Used       Soft       Hard    Warn/Grace     
+---------- -------------------------------------------------- 
+root                0          0          0     00 [--------]
+ec2-user            0    1048576    1572864     00 [--------]
+
+
+chmod o+rwx /xfs-one
+fallocate -l 10.2G /xfs-one/test_file_10.2G_by_root_user
+# SU ec2-user
+fallocate -l 1.2G /xfs-one/test_file_1.2G_by_ec2_user
+
+xfs_quota -x -c report /xfs-one
+User quota on /xfs-one (/dev/xvdf)
+                               Blocks                     
+User ID          Used       Soft       Hard    Warn/Grace     
+---------- -------------------------------------------------- 
+root         10695476          0          0     00 [--------]
+ec2-user      1258292    1048576    1572864     00  [7 days]
