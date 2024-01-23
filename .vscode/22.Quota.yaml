@@ -136,3 +136,194 @@ User ID          Used       Soft       Hard    Warn/Grace
 ---------- -------------------------------------------------- 
 root         10695476          0          0     00 [--------]
 ec2-user      1258292    1048576    1572864     00  [7 days]
+
+xfs_quota -x -c 'limit bsoft=900M bhard=1000M ec2-user' /xfs-one
+xfs_quota -x -c report /xfs-one
+User quota on /xfs-one (/dev/xvdf)
+                               Blocks                     
+User ID          Used       Soft       Hard    Warn/Grace     
+---------- -------------------------------------------------- 
+root         10695476          0          0     00 [--------]
+ec2-user      1258292     921600    1024000     00 [--none--]
+
+xfs_quota -x -c 'limit isoft=500 ihard=700 ec2-user' /xfs-one
+xfs_quota -x -c "report -bih" /xfs-one
+User quota on /xfs-one (/dev/xvdf)
+                        Blocks                            Inodes              
+User ID      Used   Soft   Hard Warn/Grace     Used   Soft   Hard Warn/Grace  
+---------- --------------------------------- --------------------------------- 
+root        10.2G      0      0  00 [------]      4      0      0  00 [------]
+ec2-user     1.2G   900M  1000M  00 [-none-]      1    500    700  00 [------]
+
+groupadd developer
+usermod -G developer ec2-user
+
+xfs_quota -x -c 'limit -u bsoft=500M bhard=800M ec2-user' -c 'limit -g bsoft=600M bhard=900M developer' /xfs-two
+
+xfs_quota -x -c 'project -s testquota'
+Setting up project testquota (path /xfs-two)...
+Processed 1 (/etc/projects and cmdline) paths for project testquota with recursion depth infinite (-1).
+Setting up project testquota (path /xfs-two)...
+Processed 1 (/etc/projects and cmdline) paths for project testquota with recursion depth infinite (-1).
+Setting up project testquota (path /xfs-two)...
+Processed 1 (/etc/projects and cmdline) paths for project testquota with recursion depth infinite (-1).
+Setting up project testquota (path /xfs-two)...
+Processed 1 (/etc/projects and cmdline) paths for project testquota with recursion depth infinite (-1).
+
+xfs_quota -x -c "print" /xfs-two
+Filesystem          Pathname
+/xfs-two            /dev/xvdg (uquota, gquota, pquota)
+/xfs-two            /dev/xvdg (project 11, testquota)
+
+xfs_quota -x -c "report -pbih" /xfs-two
+Project quota on /xfs-two (/dev/xvdg)
+                        Blocks                            Inodes              
+Project ID   Used   Soft   Hard Warn/Grace     Used   Soft   Hard Warn/Grace  
+---------- --------------------------------- --------------------------------- 
+#0              0      0      0  00 [------]      2      0      0  00 [------]
+testquota       0      0      0  00 [------]      1      0      0  00 [------]
+
+xfs_quota -x -c 'limit -p bsoft=200m bhard=300m testquota' /xfs-two/
+
+xfs_quota -x -c 'report -pbih' /xfs-two
+Project quota on /xfs-two (/dev/xvdg)
+                        Blocks                            Inodes              
+Project ID   Used   Soft   Hard Warn/Grace     Used   Soft   Hard Warn/Grace  
+---------- --------------------------------- --------------------------------- 
+#0              0      0      0  00 [------]      2      0      0  00 [------]
+testquota       0   200M   300M  00 [------]      1      0      0  00 [------]
+
+
+dd if=/dev/urandom of=/xfs-two/test_file
+dd: writing to '/xfs-two/test_file': No space left on device
+614401+0 records in
+614400+0 records out
+314572800 bytes (315 MB, 300 MiB) copied, 3.8086 s, 82.6 MB/s
+
+xfs_quota -x -c 'report -pbih' /xfs-two
+Project quota on /xfs-two (/dev/xvdg)
+                        Blocks                            Inodes              
+Project ID   Used   Soft   Hard Warn/Grace     Used   Soft   Hard Warn/Grace  
+---------- --------------------------------- --------------------------------- 
+#0              0      0      0  00 [------]      2      0      0  00 [------]
+testquota    300M   200M   300M  00 [7 days]      2      0      0  00 [------]
+
+
+xfs_quota -x -c "state" /xfs-two
+User quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: ON
+  Inode: #131 (2 blocks, 2 extents)
+Blocks grace time: [7 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+Group quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: ON
+  Inode: #132 (2 blocks, 2 extents)
+Blocks grace time: [7 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+Project quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: ON
+  Inode: #133 (1 blocks, 1 extents)
+Blocks grace time: [7 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+
+xfs_quota -x -c 'timer -p -b 10days' /xfs-two
+
+xfs_quota -x -c "state -p" /xfs-two
+Project quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: ON
+  Inode: #133 (1 blocks, 1 extents)
+Blocks grace time: [10 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+
+xfs_quota -x -c "disable -uv" /xfs-two
+User quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: OFF
+  Inode: #131 (2 blocks, 2 extents)
+Blocks grace time: [10 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+
+xfs_quota -x -c "enable -ugpv" /xfs-two
+User quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: ON
+  Inode: #131 (2 blocks, 2 extents)
+Blocks grace time: [10 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+Group quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: ON
+  Inode: #132 (2 blocks, 2 extents)
+Blocks grace time: [10 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+Project quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: ON
+  Inode: #133 (1 blocks, 1 extents)
+Blocks grace time: [10 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+
+
+xfs_quota -x -c "off -ugpv" /xfs-two
+User quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: OFF
+  Inode: #131 (2 blocks, 2 extents)
+Blocks grace time: [10 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+Group quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: OFF
+  Inode: #132 (2 blocks, 2 extents)
+Blocks grace time: [10 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+Project quota state on /xfs-two (/dev/xvdg)
+  Accounting: ON
+  Enforcement: OFF
+  Inode: #133 (1 blocks, 1 extents)
+Blocks grace time: [10 days]
+Blocks max warnings: 0
+Inodes grace time: [7 days]
+Inodes max warnings: 0
+Realtime Blocks grace time: [7 days]
+
+
+mount | grep quota
+/dev/xvda4 on / type xfs (rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota)
+/dev/xvdf on /xfs-one type xfs (rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,usrquota,prjquota,grpquota)
+/dev/xvda3 on /boot type xfs (rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota)
+
