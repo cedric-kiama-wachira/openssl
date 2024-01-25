@@ -1,0 +1,107 @@
+#Setting Up a Test System by Installing Apache and SFTP Services
+
+dnf -y install httpd && dnf -y install vsftpd
+
+systemctl start httpd.service && systemctl start vsftpd.service
+systemctl enable httpd.service && systemctl enable vsftpd.service
+
+dnf -y install policycoreutils selinux-policy selinux-policy-targeted libselinux-utils setroubleshoot-server setools setools-console mcstrans
+
+getenforce 
+
+cat /etc/sysconfig/selinux 
+
+# This file controls the state of SELinux on the system.
+# SELINUX= can take one of these three values:
+#     enforcing - SELinux security policy is enforced.
+#     permissive - SELinux prints warnings instead of enforcing.
+#     disabled - No SELinux policy is loaded.
+# See also:
+# https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/using_selinux/changing-selinux-states-and-modes_using-selinux#changing-selinux-modes-at-boot-time_changing-selinux-states-and-modes
+#
+# NOTE: Up to RHEL 8 release included, SELINUX=disabled would also
+# fully disable SELinux during boot. If you need a system with SELinux
+# fully disabled instead of SELinux running with no policy loaded, you
+# need to pass selinux=0 to the kernel command line. You can use grubby
+# to persistently set the bootloader to boot with selinux=0:
+#
+#    grubby --update-kernel ALL --args selinux=0
+#
+# To revert back to SELinux enabled:
+#
+#    grubby --update-kernel ALL --remove-args selinux
+#
+SELINUX=enforcing
+# SELINUXTYPE= can take one of these three values:
+#     targeted - Targeted processes are protected,
+#     minimum - Modification of targeted policy. Only selected processes are protected.
+#     mls - Multi Level Security protection.
+SELINUXTYPE=targeted
+
+
+cat /var/log/messages | grep "SELinux"
+
+useradd -c "Regular User" regularuser
+passwd regularuser
+
+useradd -c "Switched User" switcheduser
+passwd switcheduser
+
+useradd -c "Guest User" guestuser
+passwd guestuser
+
+useradd -c "Restricted Role User" restricteduser
+passwd restricteduser
+
+selinuxpassword
+
+ls -l /etc/*.conf
+
+ls -Z /etc/*.conf
+
+sesearch --allow --source httpd_t --target httpd_sys_content_t --class file
+
+allow domain file_type:file map; [ domain_can_mmap_files ]:True
+allow httpd_t httpd_content_type:file { getattr ioctl lock map open read };
+allow httpd_t httpdcontent:file { append create getattr ioctl link lock open read rename setattr unlink watch watch_reads write }; [ ( httpd_builtin_scripting && httpd_unified && httpd_enable_cgi ) ]:True
+allow httpd_t httpdcontent:file { execute execute_no_trans getattr ioctl map open read }; [ ( httpd_builtin_scripting && httpd_unified && httpd_enable_cgi ) ]:True
+
+
+touch /var/www/html/index.html
+ls -Z /var/www/html/*
+
+vi /var/www/html/index.html
+
+<html>
+	<title>
+		This is a test web page
+	</title>
+	<body>
+		<h1>This is a test web page</h1>
+	</body>
+</html>
+
+chmod -R 755 /var/www
+
+semanage login -l
+
+Login Name           SELinux User         MLS/MCS Range        Service
+
+__default__          unconfined_u         s0-s0:c0.c1023       *
+root                 unconfined_u         s0-s0:c0.c1023       *
+
+semanage user -l
+
+                Labeling   MLS/       MLS/                          
+SELinux User    Prefix     MCS Level  MCS Range                      SELinux Roles
+
+guest_u         user       s0         s0                             guest_r
+root            user       s0         s0-s0:c0.c1023                 staff_r sysadm_r system_r unconfined_r
+staff_u         user       s0         s0-s0:c0.c1023                 staff_r sysadm_r system_r unconfined_r
+sysadm_u        user       s0         s0-s0:c0.c1023                 sysadm_r
+system_u        user       s0         s0-s0:c0.c1023                 system_r unconfined_r
+unconfined_u    user       s0         s0-s0:c0.c1023                 system_r unconfined_r
+user_u          user       s0         s0                             user_r
+xguest_u        user       s0         s0                             xguest_r
+
+
