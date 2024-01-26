@@ -85,3 +85,224 @@ auth    required       pam_listfile.so onerr=succeed  item=user  sense=deny  fil
 sudo vi /etc/ssh/deniedusers
 root
 
+# 16. Configure Networking, Start/Stop/Check Status of Network Services
+ip -c addr 
+ip -c route 
+netplan apply 
+ip addr add cidr_notation dev device_name
+vi /etc/systemd/resolved.conf  
+systemct restart systemd-resolved.conf
+
+# 17. Packet Filtering and Static Routes
+ufw enable
+ufw status 
+ufw allow 
+ufw deny 
+ufw delete port/protocol
+ufw delete rule_number 
+ufw insert position from cidr_range| ip
+
+# 18. Configuring Caching DNS Server and Manage DNS Zone
+dnf install -y bind bind-utils 
+/etc/named.conf
+/var/named 
+vi /etc/named.conf
+allow-query    { 0.0.0.0/0; };
+recursion yes|no;
+systemctl enable named.service
+systemctl start named.service
+
+dig @dns_server_to_be_queried type_of_record_entry
+dig @localhost -q example.com ANY > /home/bob/records
+
+# 19. Configure email aliases IMAP/IMAPS services
+/etc/aliases
+newaliases 
+dnf install -y postfix mailx 
+systemctl enable postix.service 
+systemctl start postfix.service 
+echo "This is a test email" | mailx -s "Hi John" john
+
+dnf install -y dovecot 
+systemctl enable dovecot.service
+systemctl start dovecot.service
+
+vi /etc/dovecot/conf.d/10-ssl.conf
+ssl = off|on|required
+
+/etc/dovecot/dovecot.conf
+listen = ip_to_be_listened_to_for_request
+
+/etc/dovecot/conf.d/90-quota.conf
+quota_max_mail_size = 200M
+echo "Welcome to the LFCS Labs!" | mailx -s "Hi" root@example.com
+
+# 20. Configure SSH Server and Clients and Restrict Acccess to HTTPD service
+/etc/ssh/sshd.config 
+PasswordAuthentication no|yes
+systemctl restart sshd.service
+AddressFamily inet
+MaxAuthTries 4
+/etc/ssh/ssh.config 
+ForwardX11 yes
+
+
+sudo dnf -y install squid
+sudo systemctl start squid.service
+sudo systemctl enable squid.service
+
+sudo vi /etc/squid/squid.conf
+#And change http_access allow localnet line to http_access deny localnet
+systemctl stop squid.service
+systemctl start squid.service
+
+sudo vi /etc/squid/squid.conf
+acl vpn src 203.0.110.5
+acl facebook dstdomain .facebook.com
+# Add below given line in the same file before http_access deny all line:
+http_access allow vpn
+http_access deny all
+systemctl stop squid.service
+systemctl start squid.service
+
+#Add below given line in this file after http_access allow localhost line:
+http_access allow localhost
+http_access allow external
+http_access deny facebook
+
+# 21. Configure Http-server-and-log-files-restrict-access-to-web-pages
+dnf install -y httpd 
+systemctl enable httpd.service
+systemctl enable httpd.service
+
+vi /etc/httpd/conf/httpd.conf
+<Directory "/var/www/html/admin/">
+  Require ip 127.0.0.1
+</Directory>
+Listen 8090
+LogLevel debug
+
+Options Indexes FollowSymLinks
+
+AllowOverride None
+AllowOverride All 
+
+<Directory "/var/www/html/admin/">
+    AuthType Basic
+    AuthBasicProvider file
+    AuthName "Secret admin page"
+    AuthUserFile /etc/httpd/passwords
+    Require valid-user
+</Directory>
+
+
+sudo htpasswd -c /etc/httpd/passwords john
+john123
+
+sudo htpasswd -D /etc/httpd/passwords john
+
+sudo systemctl restart httpd
+
+sudo vi /etc/httpd/conf.modules.d/00-mpm.conf
+#Uncomment LoadModule mpm_prefork_module modules/mod_mpm_prefork.so line.
+# Comment LoadModule mpm_event_module modules/mod_mpm_event.so line.
+
+sudo dnf install mod_ssl -y
+httpd -M  | grep ssl
+
+ErrorLog "/var/log/httpd/main_error.log"
+
+    LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+    LogFormat "%v %h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+
+# 22. Configure Database Servers, Manage containaiers and VM Ware
+virsh autostart vm_name
+virsh destroy vm_name
+virsh list --all
+virsh start vm_name
+virsh destroy VM1
+virsh undefine VM1
+virsh define testmachine2.xml 
+sudo virsh setmaxmem VM2 80M --config
+sudo virsh setmem VM2 80M --config
+sudo virsh destroy VM2
+sudo virsh start VM2
+
+docker ps -a 
+docker pull 
+sudo docker run ---detach it --publish 1234:80  --name website docker.io/library/nginx
+
+
+dnf install -y mariadb 
+sudo systemctl enable mariadb.service
+sudo systemctl start mariadb.service
+
+vi /etc/my.cnf.d/mariadb-server.cnf
+bind-address=0.0.0.0
+log-error=/var/log/mariadb/server_mariadb.log
+port=3308
+
+
+# 23. Manage Parttitions and Swap Space
+lsblk
+mkswap /swap/partition
+swapon --show 
+sudo dd if=/dev/zero of=/swapfile bs=1M count=1024 oflag=append conv=notrunc
+cfdisk /disk/to/be/partitioned
+
+# 24. Mount file systems on demand FS features and options
+/etc/fstab
+mkfs.xfs L Lable_Name /partition/name
+mkfs.ext4 -N Inode_Value /partition/name
+mount /disk/partition/or/disk/name /file/mount/point
+umount /file/mount/point
+xfs_admin -L "SwapFS" /dev/vdb
+
+# 25. LVM and Encrypted Storage
+dnf install -y lvm2 
+pvcreate 
+pvs 
+pvremove 
+vgcreate 
+vgextend
+vgremove 
+lvcreate --size size --name name_of_volume_group 
+lvresize --size new_size  volume1/smalldata
+mkfs.xfs /dev/mapper/volume1-smalldata 
+lvremove volume1/smalldata
+
+cryptsetup open --type plain /dev/vde secretdisk
+cryptsetup --verify-passphrase open --type plain /dev/vde secretdisk
+
+mkfs.xfs /dev/mapper/secretdisk
+cryptsetup close secretdisk
+
+cryptsetup luksFormat /dev/vde
+cryptsetup open /dev/vde secretdisk
+
+# 26. RAID, Advance Permission and Disk Quotas 
+cat /proc/mdstat
+getfacl 
+dnf install -y mdadm 
+mdadm --create /dev/md0 --level=1 --raid-devices=2 /dev/vdc /dev/vdd
+sudo mdadm --manage /dev/md0 --add /dev/vde
+setfacl --modify user:john:rw specialfile
+sudo setfacl --remove user:john specialfile
+sudo setfacl --recursive --modify user:john:rwx collection/
+sudo chattr -i specialfile
+
+sudo xfs_quota -x -c 'limit bsoft=100m bhard=500m john' /mnt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
