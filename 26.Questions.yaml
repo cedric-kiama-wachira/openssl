@@ -1,0 +1,87 @@
+# 1.Essential commands
+ssh -V
+ssh -v user@remote_host_ip_or_name
+mandb 
+apropos "NFS Mount"
+
+# 2. Essential Commands
+ln -s source_file target_file
+ln source_file target_file
+ls --full-time
+cp --preserve=all /source /desitination
+
+# 3. File Permissions and Searching
+getfacl
+chmod 
+find / -type f -type d -size -mmin 
+
+# 4. File content and Regular Expression
+sed -i 
+egrep -ic
+grep -w 
+
+# 5.Archive, Backup, Compression and IO Redirection
+cat 
+sort 
+diff 
+tar 
+bzip2 
+unxz 
+
+# 6. Boot and Change Operating Mode
+grub2-install /disk/name 
+systemctl get-default 
+systemctl set-target
+shutdown +120
+shutdown -c 
+
+# 7. Scripting, manage startup processes and services
+systemctl mask | unmask | enable | daemon-reload
+
+# 8. Manage Processes and Analyze logs 
+sudo journalctl --unit=sshd.service -n 20 --no-pager
+sudo journalctl --priority info -g '^c' > .priority/boot.log
+sudo journalctl --priority error > .priority/error.log
+ps u pid 
+lsof -p pid
+# 9. Schedule Tasks and Verify Completion of Jobs
+crontab 
+renice value pid 
+at | atq | atrm 
+vi /etc/anacron 
+
+# 10. Verify Integrity and Availability Of Key Resources
+xfs_check /xfs/disk/name
+
+
+# 11. Kernel Runtime Parameters and Selinux/AppAmor
+sudo sysctl -w kernel.modules_disabled=1
+ps -auxZ 
+chcon -t context_name target_file_name
+semanage user -l username 
+sysctl -w parameter_name=0|1
+
+# 12. Manage Accounts and Users
+useradd
+usermod
+groupadd
+chage 
+userdel 
+
+# 13. Manage User System Wide Environment Variables and Template User Environments
+echo $Varianle_Name
+env 
+vi /etc/profile.d/ANY_THING_TO_BE_LOADED_FOR_ANY_USER
+vi /etc/skel 
+vi /etc/environment
+
+# 14. Configure User Resource Limits and User Privileges
+vi /etc/security/limits.conf
+visudo
+
+# 15. Manage Access to the root account and configure PAM
+sudo vi /etc/pam.d/sshd
+auth    required       pam_listfile.so onerr=succeed  item=user  sense=deny  file=/etc/ssh/deniedusers
+sudo vi /etc/ssh/deniedusers
+root
+
