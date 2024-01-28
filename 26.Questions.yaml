@@ -1,7 +1,8 @@
 # 1.Essential commands
 ssh -V
 ssh -v user@remote_host_ip_or_name
-mandb 
+mandb
+dnf -y installnfs-utils 
 apropos "NFS Mount"
 
 # 2. Essential Commands
