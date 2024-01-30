@@ -28,6 +28,7 @@ diff
 tar 
 bzip2 
 unxz 
+star 
 
 # 6. Boot and Change Operating Mode
 grub2-install /disk/name 
